@@ -1,0 +1,20 @@
+package com.board.dto;
+
+import com.board.vo.BoardVO;
+import com.board.vo.CategoryVO;
+import com.board.vo.PageInfo;
+import com.board.vo.SearchVO;
+import lombok.Data;
+
+import java.util.List;
+
+@Data
+public class ResponseBoardList {
+    private List<CategoryVO> categoryList;
+    private List<BoardVO> boardList;
+    private int boardListCount;
+    private PageInfo pageInfo;
+    private SearchVO searchCondition;
+    private String startDate;
+    private String endDate;
+}

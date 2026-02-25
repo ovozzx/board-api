@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.board.mapper.ReplyMapper">
+    <!-- 댓글 등록 -->
+    <insert id="insertReply" parameterType="com.board.vo.ReplyVO">
+        INSERT INTO t_reply
+            (board_id
+            , parent_reply_id
+            , create_user
+            , content
+            , create_date
+            , modify_date
+            , is_usable)
+        VALUES
+            ( #{boardId}
+            , #{parentReplyId}
+            , ''
+            , #{content}
+            , CURRENT_TIMESTAMP
+            , NULL
+            , TRUE)
+    </insert>
+
+</mapper>

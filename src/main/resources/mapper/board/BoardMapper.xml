@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.board.mapper.BoardMapper">
+    <!-- TODO : 동적 정렬 조건, 데이터 많을 경우 (정규화, 비정규화 중요)
+    비정규화 : 서브쿼리로 하지말고 컬럼으로 가지고 있음. 들여쓰기 -->
+    <!-- 목록 조회 -->
+    <select id="selectBoardList" parameterType="com.board.vo.SearchVO" resultType="com.board.vo.BoardVO">
+        SELECT b.board_id
+             , b.title
+             , b.content
+             , b.create_user
+             , b.view_count
+             , b.create_date
+             , c.category_name
+             , ((SELECT count(*) FROM t_attachment WHERE board_id = b.board_id) > 0) AS has_attachment
+        FROM t_board b
+        INNER JOIN t_category c ON b.category_id = c.category_id
+        WHERE b.is_usable = true
+        <if test="startDate != null and startDate != ''">
+            AND (b.create_date &gt;= #{startDate})
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND (b.create_date &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)) <!--당일 데이터 포함-->
+        </if>
+        <if test="categoryId != null and categoryId != 0">
+            AND (b.category_id = #{categoryId})
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND
+            (title LIKE CONCAT('%', #{keyword}, '%')
+            OR create_user LIKE CONCAT('%', #{keyword}, '%')
+            OR content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY b.board_id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+        <!-- LIMIT 10 OFFSET 0 : 0번째부터 10개  → 1~10번째 -->
+    </select>
+
+    <!-- TODO : 조건 위 쿼리랑 같을 때 => 중복 최소화 include 쓰기, order 성능 문제  -->
+    <!-- 조회된 게시글 전체 개수 -->
+    <select id="selectBoardListCount" parameterType="com.board.vo.SearchVO">
+        SELECT count(*)
+        FROM t_board b
+        INNER JOIN t_category c ON b.category_id = c.category_id
+        WHERE b.is_usable = true
+        <if test="startDate != null and startDate != ''">
+            AND (b.create_date &gt;= #{startDate})
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND (b.create_date &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)) <!--당일 데이터 포함-->
+        </if>
+        <if test="categoryId != null and categoryId != 0">
+            AND (b.category_id = #{categoryId})
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND
+            (title LIKE CONCAT('%', #{keyword}, '%')
+            OR create_user LIKE CONCAT('%', #{keyword}, '%')
+            OR content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <!-- 전체 카테고리 읽기 -->
+    <select id="selectCategoryList" resultType="com.board.vo.CategoryVO">
+        SELECT *
+          FROM t_category
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="selectBoard" parameterType="string" resultType="com.board.vo.BoardVO">
+        SELECT b.*
+             , c.category_name
+          FROM t_board b
+         INNER JOIN t_category c ON b.category_id = c.category_id
+         WHERE b.is_usable = true
+           AND b.board_id = #{boardId}
+    </select>
+
+    <!-- 등록 -->
+    <insert id="insertBoard" parameterType="com.board.vo.BoardVO" useGeneratedKeys="true" keyProperty="boardId">
+        INSERT INTO t_board (category_id, title, content, create_user, user_password, is_usable)
+        VALUES (#{categoryId}, #{title}, #{content}, #{createUser}, #{userPassword}, true)
+    </insert>
+
+    <!-- 수정 -->
+    <update id="updateBoard" parameterType="com.board.vo.BoardVO">
+        UPDATE t_board
+        SET create_user = #{createUser}
+          , title = #{title}
+          , content = #{content}
+          , modify_date = CURRENT_TIMESTAMP
+        WHERE board_id = #{boardId}
+          AND is_usable = true
+    </update>
+
+    <!-- 첨부파일 수정 -->
+    <update id="updateAttachment" parameterType="com.board.vo.AttachmentVO">
+        UPDATE t_attachment
+        SET ORIGINAL_NAME=''
+          , FILE_PATH=''
+          , FILE_EXT='',
+          , FILE_SIZE=0
+          , MODIFY_DATE=CURRENT_TIMESTAMP
+        WHERE attachment_id = #{attachmentId}
+          AND is_usable = true
+    </update>
+
+    <!-- 첨부파일 삭제 (논리 삭제) -->
+    <update id="deleteAttachment" parameterType="string">
+        UPDATE t_attachment
+        SET is_usable = false
+        WHERE attachment_id = #{attachmentId}
+          AND is_usable = true
+    </update>
+
+    <!-- 게시물 삭제 (논리 삭제) -->
+    <update id="deleteBoard" parameterType="string">
+        UPDATE t_board
+        SET is_usable = false
+        WHERE board_id = #{boardId}
+          AND is_usable = true
+    </update>
+
+    <!-- 조회수 증가 -->
+    <update id="updateViewCount" parameterType="string">
+        UPDATE t_board
+        SET view_count = view_count + 1
+        WHERE board_id = #{boardId}
+          AND is_usable = true
+    </update>
+
+    <!-- 비밀번호 조회 -->
+    <select id="selectPasswordById" parameterType="com.board.vo.DeleteBoardVO" resultType="String">
+        SELECT user_password FROM t_board WHERE board_id = #{boardId}
+    </select>
+
+    <!-- 댓글 리스트 읽기 -->
+    <select id="selectReplyList" parameterType="string" resultType="com.board.vo.ReplyVO">
+        SELECT *
+          FROM t_reply
+         WHERE board_id = #{boardId}
+           AND is_usable = true
+         ORDER BY create_date
+    </select>
+
+    <!-- 게시물 > 첨부파일 리스트 읽기 -->
+    <select id="selectFileList" parameterType="string" resultType="com.board.vo.AttachmentVO">
+        SELECT *
+          FROM t_attachment
+         WHERE board_id = #{boardId}
+           AND is_usable = true
+         ORDER BY create_date
+    </select>
+
+    <!-- 첨부파일 단건 읽기 -->
+    <select id="selectAttachmentById" parameterType="string" resultType="com.board.vo.AttachmentVO">
+        SELECT *
+          FROM t_attachment
+         WHERE attachment_id = #{attachmentId}
+           AND is_usable = true
+    </select>
+
+    <!-- 첨부파일 등록 -->
+    <insert id="insertAttachment" parameterType="com.board.vo.AttachmentVO">
+        INSERT INTO t_attachment
+        (board_id
+        , original_name
+        , save_name
+        , file_path
+        , file_ext
+        , file_size
+        , create_date
+        , is_usable)
+        VALUES
+        (#{boardId}
+        , #{originalName}
+        , #{saveName}
+        , #{filePath}
+        , #{fileExt}
+        , #{fileSize}
+        , CURRENT_TIMESTAMP
+        , TRUE)
+    </insert>
+</mapper>

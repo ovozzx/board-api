@@ -1,0 +1,294 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f6fa;
+    color: #333;
+}
+
+.wrapper {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: #2c3e50;
+    border-left: 4px solid #3498db;
+    padding-left: 12px;
+    max-width: 900px;
+    margin: 40px auto 24px;
+    padding-left: 32px;
+}
+
+/* 게시글 메타 정보 */
+.board-info {
+    max-width: 900px;
+    margin: 0 auto 0;
+    padding: 0 20px;
+}
+
+.board-info ul {
+    list-style: none;
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #888;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+/* 제목 영역 */
+.title {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+    background: #fff;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.title ul {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.title ul li:first-child {
+    color: #3498db;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.title ul li:last-child {
+    margin-left: auto;
+    font-size: 12px;
+    color: #aaa;
+    font-weight: 400;
+}
+
+/* 본문 */
+.content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    min-height: 200px;
+    font-size: 14px;
+    line-height: 1.8;
+    background: #fff;
+    color: #444;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+/* 첨부파일 */
+.attachment-area {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    background: #f9f9f9;
+    border-top: 1px solid #eee;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    font-size: 13px;
+    color: #666;
+}
+
+.attachment-area ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.attachment-area a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.attachment-area a:hover {
+    text-decoration: underline;
+}
+
+/* 댓글 영역 */
+.reply-area {
+    max-width: 900px;
+    margin: 20px auto 0;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.reply-area > div {
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+    color: #555;
+    display: flex;
+    gap: 12px;
+}
+
+.reply-area form {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.reply-area textarea {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    resize: none;
+    height: 60px;
+    font-family: inherit;
+}
+
+.reply-area textarea:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.reply-area button[type="submit"] {
+    padding: 0 20px;
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.reply-area button[type="submit"]:hover {
+    background: #2980b9;
+}
+
+/* 버튼 그룹 */
+.button-group {
+    max-width: 900px;
+    margin: 16px auto 0;
+    padding: 0 20px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.button-group a,
+.button-group button {
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: background 0.2s;
+}
+
+a.move-list {
+    background: #ecf0f1;
+    color: #555;
+}
+
+a.move-list:hover {
+    background: #dde1e3;
+}
+
+a.modify {
+    background: #f39c12;
+    color: #fff;
+}
+
+a.modify:hover {
+    background: #d68910;
+}
+
+button.remove {
+    background: #e74c3c;
+    color: #fff;
+}
+
+button.remove:hover {
+    background: #c0392b;
+}
+
+/* 삭제 모달 */
+#modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+#modal form {
+    background: #fff;
+    padding: 32px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 300px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+#modal label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+#modal input[type="password"] {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+#modal input[type="password"]:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+#modal .modal-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+#modal button {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#modal button[type="button"] {
+    background: #ecf0f1;
+    color: #555;
+}
+
+#modal button[type="submit"] {
+    background: #e74c3c;
+    color: #fff;
+}
