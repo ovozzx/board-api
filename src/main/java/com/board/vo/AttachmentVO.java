@@ -1,8 +1,8 @@
 package com.board.vo;
 
 public class AttachmentVO {
-    String attachmentId;
-    String boardId;
+    int attachmentId;
+    int boardId;
     String originalName;
     String saveName;
     String filePath;
@@ -12,19 +12,19 @@ public class AttachmentVO {
     String modifyDate;
     boolean useYn;
 
-    public String getAttachmentId() {
+    public int getAttachmentId() {
         return attachmentId;
     }
 
-    public void setAttachmentId(String attachmentId) {
+    public void setAttachmentId(int attachmentId) {
         this.attachmentId = attachmentId;
     }
 
-    public String getBoardId() {
+    public int getBoardId() {
         return boardId;
     }
 
-    public void setBoardId(String boardId) {
+    public void setBoardId(int boardId) {
         this.boardId = boardId;
     }
 

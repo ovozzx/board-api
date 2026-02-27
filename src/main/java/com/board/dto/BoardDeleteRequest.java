@@ -1,8 +1,8 @@
 package com.board.dto;
 
-public class RequestBoardDelete {
+public class BoardDeleteRequest {
     String passwordInput;
-    String boardId;
+    int boardId;
 
     public String getPasswordInput() {
         return passwordInput;
@@ -12,11 +12,11 @@ public class RequestBoardDelete {
         this.passwordInput = passwordInput;
     }
 
-    public String getBoardId() {
+    public int getBoardId() {
         return boardId;
     }
 
-    public void setBoardId(String boardId) {
+    public void setBoardId(int boardId) {
         this.boardId = boardId;
     }
 

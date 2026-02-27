@@ -9,7 +9,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ResponseBoardList {
+public class BoardsResponse {
     private List<CategoryVO> categoryList;
     private List<BoardVO> boardList;
     private int boardListCount;

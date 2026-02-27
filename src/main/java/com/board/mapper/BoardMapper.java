@@ -1,7 +1,7 @@
 package com.board.mapper;
 
-import com.board.dto.RequestBoardModify;
-import com.board.dto.RequestBoardWrite;
+import com.board.dto.BoardModifyRequest;
+import com.board.dto.BoardWriteRequest;
 import com.board.vo.*;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -11,23 +11,23 @@ import java.util.List;
 public interface BoardMapper {
     List<BoardVO> selectBoardList(SearchVO searchVO);
     List<CategoryVO> selectCategoryList();
-    BoardVO selectBoard(String boardId);
-    int insertBoard(RequestBoardWrite requestBoardWrite);
-    int updateBoard(RequestBoardModify requestBoardModify);
-    int deleteBoard(String boardId);
-    int updateViewCount(String boardId);
-    String selectPasswordById(String boardId);
+    BoardVO selectBoard(int boardId);
+    int insertBoard(BoardWriteRequest requestBoardWrite);
+    int updateBoard(BoardModifyRequest requestBoardModify);
+    int deleteBoard(int boardId);
+    int updateViewCount(int boardId);
+    String selectPasswordById(int boardId);
     int selectBoardListCount(SearchVO searchVO);
 
-    List<AttachmentVO> selectFileList(String boardId);
+    List<AttachmentVO> selectFileList(int boardId);
 
-    List<ReplyVO> selectReplyList(String boardId);
+    List<ReplyVO> selectReplyList(int boardId);
 
     int insertAttachment(AttachmentVO attachment);
 
-    AttachmentVO selectAttachmentById(String attachmentId);
+    AttachmentVO selectAttachmentById(int attachmentId);
 
     int updateAttachment(AttachmentVO attachment);
 
-    int deleteAttachment(String attachmentId);
+    int deleteAttachment(int attachmentId);
 }

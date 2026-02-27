@@ -4,8 +4,8 @@ import java.util.List;
 
 public class BoardVO {
 
-    private String boardId;
-    private String categoryId;
+    private int boardId;
+    private int categoryId;
     private String categoryName;
     private String title;
     private String content;
@@ -17,16 +17,16 @@ public class BoardVO {
     private String useYn;
 	private boolean hasAttachment;
 
-	public String getBoardId() {
+	public int getBoardId() {
 		return boardId;
 	}
-	public void setBoardId(String boardId) {
+	public void setBoardId(int boardId) {
 		this.boardId = boardId;
 	}
-	public String getCategoryId() {
+	public int getCategoryId() {
 		return categoryId;
 	}
-	public void setCategoryId(String categoryId) {
+	public void setCategoryId(int categoryId) {
 		this.categoryId = categoryId;
 	}
 	public String getCategoryName() {

@@ -5,7 +5,7 @@ import static com.board.constants.BoardConstants.PAGE_SIZE;
 public class SearchVO {
 	private String startDate;
 	private String endDate;
-	private String categoryId;
+	private int categoryId;
 	private String keyword;
 	private int page;
 
@@ -25,11 +25,11 @@ public class SearchVO {
 		this.endDate = endDate;
 	}
 
-	public String getCategoryId() {
+	public int getCategoryId() {
 		return categoryId;
 	}
 
-	public void setCategoryId(String categoryId) {
+	public void setCategoryId(int categoryId) {
 		this.categoryId = categoryId;
 	}
 

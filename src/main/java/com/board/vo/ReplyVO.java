@@ -2,31 +2,31 @@ package com.board.vo;
 
 public class ReplyVO {
 
-	private String replyId;        // REPLY_ID
-    private String boardId;        // BOARD_ID
-    private String parentReplyId;  // PARENT_REPLY_ID (null 가능)
+	private int replyId;        // REPLY_ID
+    private int boardId;        // BOARD_ID
+    private Integer parentReplyId;  // PARENT_REPLY_ID (null 가능)
     private String createUser;   // CREATE_USER
     private String content;      // CONTENT
     private String createDate; // CREATE_DATE
     private String modifyDate; // MODIFY_DATE
     private String useYn;        // USE_YN
     
-	public String getReplyId() {
+	public int getReplyId() {
 		return replyId;
 	}
-	public void setReplyId(String replyId) {
+	public void setReplyId(int replyId) {
 		this.replyId = replyId;
 	}
-	public String getBoardId() {
+	public int getBoardId() {
 		return boardId;
 	}
-	public void setBoardId(String boardId) {
+	public void setBoardId(int boardId) {
 		this.boardId = boardId;
 	}
-	public String getParentReplyId() {
+	public Integer getParentReplyId() {
 		return parentReplyId;
 	}
-	public void setParentReplyId(String parentReplyId) {
+	public void setParentReplyId(Integer parentReplyId) {
 		this.parentReplyId = parentReplyId;
 	}
 	public String getCreateUser() {
