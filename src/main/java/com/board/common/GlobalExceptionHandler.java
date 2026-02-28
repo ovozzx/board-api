@@ -21,4 +21,12 @@ public class GlobalExceptionHandler { // Service에서 던진 예외는 GlobalEx
     public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException e){
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    // TODO : 이외의 에러, io --> 에러 터지면 500
+    // TODO : exception 체이닝, 런타임 / unchecked 조사
+    // TODO : 커밋 이력 목적별로 남기기 (작업 단위) --> 답글 형태로 변환 (최대 4계층), 정렬 순서(등록일, 조회...)/페이지네이션 개수 -> 검색바 선택,
+    // TODO : *** promise 코드 ***
+    // status 코드 10개 내 외우기
+    // http : 서버 - 브라우저 어떻게 통신
+    // tcp, 소켓 .. cs 기초,,,,
 }

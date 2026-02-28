@@ -203,9 +203,12 @@ public class BoardService {
     }
 
     // 페이지네이션 함수
+    // TODO : 모두 공통 로직 -> 파라미터 공통적으로 쓸 수 있도록 해야함
+    // 인수 풀어서 써서 넣거나, 추상화 (추상, *인터페이스*)
+    // TODO : 화면에서 계산하는 게 맞음 -> 계산 필요한 것만 서버에서 제공 (db)
     public PageInfo createPageInfo(int boardListCount, BoardsRequest boardsRequest){
         int pageCount = (int) Math.ceil((double) boardListCount / PAGE_SIZE);
-        if (pageCount == 0) pageCount = 1;
+        if (pageCount == 0) pageCount = 1; // TODO : 0일 때는 return
         int currentPage = (boardsRequest.getPage() == null || boardsRequest.getPage() < 1) ? 1 : boardsRequest.getPage();
         int startPage = ((currentPage - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1;
         int endPage = Math.min(startPage + PAGE_GROUP_SIZE - 1, pageCount);

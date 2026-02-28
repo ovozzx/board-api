@@ -71,7 +71,7 @@ public class BoardController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    @GetMapping("/view/{boardId}")
+    @GetMapping("/view/{boardId}") // TODO : /board/id.. view 수정
     public ResponseEntity<BoardDetailResponse> getBoardDetailById(
             @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){
         BoardDetailResponse boardDetailViewVO = service.getDetailBoardById(boardId);
@@ -84,7 +84,7 @@ public class BoardController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    @GetMapping("/write")
+    @GetMapping("/write") // TODO : 카테고리를 공통으로 쓰도록
     public ResponseEntity<List<CategoryVO>> viewWritePage(){
         List<CategoryVO> categories = service.getCategories();
         return ResponseEntity.ok(categories);
