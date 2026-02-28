@@ -12,6 +12,18 @@ public class AttachmentVO {
     String modifyDate;
     boolean useYn;
 
+    public AttachmentVO() {}
+
+    public AttachmentVO(int boardId, String originalName, String saveName,
+                        String filePath, String fileExt, long fileSize) {
+        this.boardId = boardId;
+        this.originalName = originalName;
+        this.saveName = saveName;
+        this.filePath = filePath;
+        this.fileExt = fileExt;
+        this.fileSize = fileSize;
+    }
+
     public int getAttachmentId() {
         return attachmentId;
     }

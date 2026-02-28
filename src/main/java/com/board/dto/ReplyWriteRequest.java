@@ -1,15 +1,25 @@
 package com.board.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class ReplyWriteRequest {
 
-	private int replyId;        // REPLY_ID
-    private int boardId;        // BOARD_ID
-    private Integer parentReplyId;  // PARENT_REPLY_ID (null 가능)
-    private String createUser;   // CREATE_USER
-    private String content;      // CONTENT
-    private String createDate; // CREATE_DATE
-    private String modifyDate; // MODIFY_DATE
-    private String useYn;        // USE_YN
+	@Schema(hidden = true)
+	private int replyId;
+    @Schema(description = "게시글 ID", example = "1")
+    private int boardId;
+    @Schema(description = "부모 댓글 ID (대댓글인 경우)", example = "0")
+    private Integer parentReplyId;
+    @Schema(description = "작성자", example = "홍길동")
+    private String createUser;
+    @Schema(description = "댓글 내용", example = "좋은 글이네요!")
+    private String content;
+    @Schema(hidden = true)
+    private String createDate;
+    @Schema(hidden = true)
+    private String modifyDate;
+    @Schema(hidden = true)
+    private String useYn;
     
 	public int getReplyId() {
 		return replyId;

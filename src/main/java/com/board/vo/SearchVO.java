@@ -1,8 +1,21 @@
 package com.board.vo;
 
+import com.board.dto.BoardsRequest;
+
 import static com.board.constants.BoardConstants.PAGE_SIZE;
 
 public class SearchVO {
+
+	public static SearchVO from(BoardsRequest request) { //  BoardsRequest → SearchVO로 타입 변환 + null 처리 로직
+		SearchVO vo = new SearchVO();
+		vo.startDate = request.getStartDate();
+		vo.endDate = request.getEndDate();
+		vo.categoryId = request.getCategoryId() != null ? request.getCategoryId() : 0;
+		vo.keyword = request.getKeyword();
+		vo.page = request.getPage() != null ? request.getPage() : 1;
+		return vo;
+	}
+
 	private String startDate;
 	private String endDate;
 	private int categoryId;

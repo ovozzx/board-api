@@ -22,7 +22,7 @@ public class BoardService {
     @Value("${board.upload-path}") // Spring이 application.properties에 있는 값을 꺼내서 변수에 넣어주는 어노테이션
     private String uploadPath;
 
-    private final BoardMapper boardMapper;
+    private final BoardMapper boardMapper; // mybatis
 
     public BoardService(BoardMapper boardMapper) {
         this.boardMapper = boardMapper;
@@ -30,13 +30,7 @@ public class BoardService {
 
     public BoardsResponse getBoards(BoardsRequest boardsRequest) {
 
-        SearchVO searchVO = new SearchVO(); // map
-        searchVO.setStartDate(boardsRequest.getStartDate());
-        searchVO.setEndDate(boardsRequest.getEndDate());
-        searchVO.setCategoryId(boardsRequest.getCategoryId() != null ? boardsRequest.getCategoryId() : 0);
-        searchVO.setKeyword(boardsRequest.getKeyword());
-        searchVO.setPage(boardsRequest.getPage() != null ? boardsRequest.getPage() : 1);
-        // TODO : 위 반복되는 부분 mapper => map struct 사용
+        SearchVO searchVO = SearchVO.from(boardsRequest);
 
         List<CategoryVO> categoryList = boardMapper.selectCategoryList();
         List<BoardVO> boardList = boardMapper.selectBoardList(searchVO);
@@ -45,29 +39,22 @@ public class BoardService {
         // 페이지네이션 계산 => 생성 함수 만들기
         PageInfo pageInfo = createPageInfo(boardListCount, boardsRequest);
 
-        BoardsResponse response = new BoardsResponse();
-        response.setCategoryList(categoryList);
-        response.setBoardList(boardList);
-        response.setBoardListCount(boardListCount);
-        response.setPageInfo(pageInfo);
+        BoardsResponse response = new BoardsResponse(categoryList, boardList, boardListCount, pageInfo);
 
         return response;
     }
 
     public BoardDetailResponse getDetailBoardById(int boardId) {
-        BoardDetailResponse boardDetailViewVO = new BoardDetailResponse();
 
         BoardVO boardVO = boardMapper.selectBoard(boardId);
         List<ReplyVO> replyList = boardMapper.selectReplyList(boardId);
         List<AttachmentVO> fileList = boardMapper.selectFileList(boardId);
 
-        boardDetailViewVO.setBoard(boardVO);
-        boardDetailViewVO.setReplyList(replyList);
-        boardDetailViewVO.setFileList(fileList);
+        BoardDetailResponse response = new BoardDetailResponse(boardVO, replyList, fileList);
 
         boardMapper.updateViewCount(boardId);
 
-        return boardDetailViewVO;
+        return response;
     }
 
     // Docu 제거
@@ -105,13 +92,7 @@ public class BoardService {
                 attachment.transferTo(new File(uploadPath + File.separator + saveName));
 
                 // DB insert
-                AttachmentVO attachmentVO = new AttachmentVO();
-                attachmentVO.setBoardId(boardWriteRequest.getBoardId());
-                attachmentVO.setOriginalName(originalName);
-                attachmentVO.setSaveName(saveName);
-                attachmentVO.setFilePath(uploadPath);
-                attachmentVO.setFileExt(ext);
-                attachmentVO.setFileSize(attachment.getSize());
+                AttachmentVO attachmentVO = new AttachmentVO(boardWriteRequest.getBoardId(), originalName, saveName, uploadPath, ext, attachment.getSize());
 
                 boardMapper.insertAttachment(attachmentVO);
                 insertAttachmentCnt++;
@@ -209,13 +190,7 @@ public class BoardService {
                 // 파일을 디스크에 저장하는 부분은 트랙잭션 롤백 대상이 아님
                 file.transferTo(new File(uploadPath + File.separator + saveName));
 
-                AttachmentVO attachmentVO = new AttachmentVO();
-                attachmentVO.setBoardId(requestBoardModify.getBoardId());
-                attachmentVO.setOriginalName(originalName);
-                attachmentVO.setSaveName(saveName);
-                attachmentVO.setFilePath(uploadPath);
-                attachmentVO.setFileExt(ext);
-                attachmentVO.setFileSize(file.getSize());
+                AttachmentVO attachmentVO = new AttachmentVO(requestBoardModify.getBoardId(), originalName, saveName, uploadPath, ext, file.getSize());
 
                 boardMapper.insertAttachment(attachmentVO);
                 updateAttachmentCnt++;

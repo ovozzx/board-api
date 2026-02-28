@@ -13,4 +13,10 @@ public class BoardDetailResponse {
     private List<ReplyVO> replyList;
     private List<AttachmentVO> fileList;
 
+    public BoardDetailResponse(BoardVO board, List<ReplyVO> replyList, List<AttachmentVO> fileList){
+        this.board = board;
+        this.replyList = replyList;
+        this.fileList = fileList;
+    }
+
 }

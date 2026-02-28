@@ -17,4 +17,12 @@ public class BoardsResponse {
     private SearchVO searchCondition;
     private String startDate;
     private String endDate;
+
+    public BoardsResponse(List<CategoryVO> categoryList, List<BoardVO> boardList,
+                          int boardListCount, PageInfo pageInfo) {
+        this.categoryList = categoryList;
+        this.boardList = boardList;
+        this.boardListCount = boardListCount;
+        this.pageInfo = pageInfo;
+    }
 }
