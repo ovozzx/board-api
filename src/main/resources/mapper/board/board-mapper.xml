@@ -172,4 +172,24 @@
         , CURRENT_TIMESTAMP
         , TRUE)
     </insert>
+
+    <!-- 댓글 등록 -->
+    <insert id="insertReply" parameterType="com.board.dto.ReplyWriteRequest">
+        INSERT INTO t_reply
+        (board_id
+        , parent_reply_id
+        , create_user
+        , content
+        , create_date
+        , modify_date
+        , is_usable)
+        VALUES
+            ( #{boardId}
+            , #{parentReplyId}
+            , ''
+            , #{content}
+            , CURRENT_TIMESTAMP
+            , NULL
+            , TRUE)
+    </insert>
 </mapper>

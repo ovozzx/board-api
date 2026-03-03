@@ -202,6 +202,14 @@ public class BoardService {
         }
     }
 
+    @Transactional
+    public void registerReply(ReplyWriteRequest replyWriteRequest) {
+        int insertCnt = boardMapper.insertReply(replyWriteRequest);
+        if(insertCnt == 0){
+            throw new IllegalArgumentException("댓글 등록에 실패하였습니다.");
+        }
+    }
+
     // 페이지네이션 함수
     // TODO : 모두 공통 로직 -> 파라미터 공통적으로 쓸 수 있도록 해야함
     // 인수 풀어서 써서 넣거나, 추상화 (추상, *인터페이스*)

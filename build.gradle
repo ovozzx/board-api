@@ -38,6 +38,11 @@ dependencies {
 
     // validation 어노테이션 사용을 위함
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // MapStruct => 컴파일 타임에 매핑 코드를 자동 생성
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0' // Lombok과 함께 쓸 때 필요
 }
 
 tasks.named('test') {

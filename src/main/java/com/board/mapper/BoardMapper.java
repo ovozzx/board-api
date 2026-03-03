@@ -2,6 +2,7 @@ package com.board.mapper;
 
 import com.board.dto.BoardModifyRequest;
 import com.board.dto.BoardWriteRequest;
+import com.board.dto.ReplyWriteRequest;
 import com.board.vo.*;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -30,4 +31,6 @@ public interface BoardMapper {
     int updateAttachment(AttachmentVO attachment);
 
     int deleteAttachment(int attachmentId);
+
+    int insertReply(ReplyWriteRequest replyWriteRequest);
 }

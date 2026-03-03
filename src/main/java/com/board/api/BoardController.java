@@ -34,8 +34,8 @@ import java.util.Map;
     // 데이터 예시, write
 @Tag(name = "게시판", description = "게시글 CRUD API")
 @RestController
-@RequestMapping("/api/board")
-@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/api/boards")
+@CrossOrigin(origins = "*")
 public class BoardController {
 
     @Autowired
@@ -45,7 +45,7 @@ public class BoardController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    @GetMapping("/list")
+    @GetMapping
     public ResponseEntity<BoardsResponse> getBoards(@ModelAttribute BoardsRequest boardsRequest) {
         // DTO : board list request (도메인단우ㅣ) , 파일명 controller로
         // ms api 가이드 (자료 첫장)
@@ -71,48 +71,49 @@ public class BoardController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    @GetMapping("/view/{boardId}") // TODO : /board/id.. view 수정
-    public ResponseEntity<BoardDetailResponse> getBoardDetailById(
+    @GetMapping("/{boardId}") // /board/id.. view 수정
+    public ResponseEntity<BoardDetailResponse> getBoard(
             @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){
         BoardDetailResponse boardDetailViewVO = service.getDetailBoardById(boardId);
 
         return ResponseEntity.ok(boardDetailViewVO);
-        // TODO : null => 서비스에서 예외 던지기 => 컨트롤러 던지기 => 공통 예외처리
+        //  null => 서비스에서 예외 던지기 => 컨트롤러 던지기 => 공통 예외처리
+        // TODO : 수정화면
     }
 
     @Operation(summary = "게시글 작성을 위한 카테고리 목록 조회", description = "게시글 작성 시 사용할 카테고리 목록을 조회합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    @GetMapping("/write") // TODO : 카테고리를 공통으로 쓰도록
-    public ResponseEntity<List<CategoryVO>> viewWritePage(){
+    @GetMapping("/cateogories") // TODO : 카테고리를 공통으로 쓰도록
+    public ResponseEntity<List<CategoryVO>> getCategories(){
         List<CategoryVO> categories = service.getCategories();
         return ResponseEntity.ok(categories);
     }
 
-    @Operation(summary = "게시글 수정 데이터 조회", description = "게시글 ID로 수정 화면에 필요한 게시글 정보와 첨부파일 목록을 조회합니다. 조회수는 증가하지 않습니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회 성공")
-    })
-    @GetMapping("/modify/{boardId}")
-    public ResponseEntity<BoardModifyResponse> viewModifyPage(
-            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){
-        System.out.println("===" + boardId);
-        // 수정 시에는 조회수 미증가
-        BoardModifyResponse boardModifyVO = service.getModifyBoardById(boardId);
-
-        return ResponseEntity.ok(boardModifyVO);
-    }
+//    @Operation(summary = "게시글 수정 데이터 조회", description = "게시글 ID로 수정 화면에 필요한 게시글 정보와 첨부파일 목록을 조회합니다. 조회수는 증가하지 않습니다.")
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "조회 성공")
+//    })
+//    @GetMapping("/board/{boardId}")
+//    public ResponseEntity<BoardModifyResponse> viewModifyPage(
+//            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){
+//        System.out.println("===" + boardId);
+//        // 수정 시에는 조회수 미증가
+//        BoardModifyResponse boardModifyVO = service.getModifyBoardById(boardId);
+//
+//        return ResponseEntity.ok(boardModifyVO);
+//    }
 
     @Operation(summary = "첨부파일 다운로드", description = "파일 ID로 첨부파일을 다운로드합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "다운로드 성공"),
             @ApiResponse(responseCode = "404", description = "파일 없음")
     })
-    @GetMapping("/download")
-    public ResponseEntity<Resource> downloadFile(
-            @Parameter(description = "파일 ID", required = true) @RequestParam int fileId) throws IOException {
-        AttachmentVO attachment = service.getAttachmentById(fileId);
+    @GetMapping("/{boardId}/attachments/{attachmentId}")
+    public ResponseEntity<Resource> getAttachment(
+            @Parameter(description = "파일 ID", required = true) @PathVariable int attachmentId) throws IOException {
+        AttachmentVO attachment = service.getAttachmentById(attachmentId);
 
         if (attachment == null) {
             return ResponseEntity.notFound().build();
@@ -140,8 +141,8 @@ public class BoardController {
             @ApiResponse(responseCode = "200", description = "등록 성공"),
             @ApiResponse(responseCode = "403", description = "필수값 누락 또는 등록 실패")
     })
-    @PostMapping("/write")
-    public ResponseEntity<?> registerBoard(@Valid @ModelAttribute BoardWriteRequest requestBoardWrite, BindingResult bindingResult) throws IOException {
+    @PostMapping
+    public ResponseEntity<?> writeBoard(@Valid @ModelAttribute BoardWriteRequest requestBoardWrite, BindingResult bindingResult) throws IOException {
 
         // valid dto에 넣기
         // @Valid만 붙이면 DTO의 @NotBlank 등이 자동 실행되고, 결과가 BindingResult에 담김
@@ -166,7 +167,7 @@ public class BoardController {
             @ApiResponse(responseCode = "400", description = "필수값 누락"),
             @ApiResponse(responseCode = "403", description = "비밀번호 불일치")
     })
-    @PostMapping("/modify")
+    @PutMapping("/{boardId}")
     public ResponseEntity<?> modifyBoard(@Valid @ModelAttribute BoardModifyRequest requestBoardModify, BindingResult bindingResult) throws IOException {
         // board, 첨부파일, 삭제
         System.out.println("삭제 id : " + requestBoardModify.getDeleteIds());
@@ -190,7 +191,7 @@ public class BoardController {
             @ApiResponse(responseCode = "403", description = "비밀번호 불일치"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @PostMapping("/delete")
+    @DeleteMapping("/{boardId}")
     public ResponseEntity<?> deleteBoard(@RequestBody BoardDeleteRequest requestBoardDelete) throws IOException {
         System.out.println("===" + requestBoardDelete.getPasswordInput());
         // 이 흐름이 맞음
@@ -204,5 +205,12 @@ public class BoardController {
         return ResponseEntity.ok().build();
 
     }
+
+    @PostMapping("/{boardId}/replies")
+    public ResponseEntity<?> registerReply(@RequestBody ReplyWriteRequest replyWriteRequest) { // form 방식일 때만 vo 자동 바인딩, json은 @RequestBody 필요
+        service.registerReply(replyWriteRequest);
+        return ResponseEntity.ok().build(); // build() : body 없음
+    }
+
 
 }
