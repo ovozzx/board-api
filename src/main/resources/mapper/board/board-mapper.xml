@@ -127,11 +127,39 @@
 
     <!-- 댓글 리스트 읽기 -->
     <select id="selectReplyList" parameterType="int" resultType="com.board.vo.ReplyVO">
+    WITH RECURSIVE REPLY_TREE AS (
+    SELECT
+        REPLY_ID,
+        BOARD_ID,
+        PARENT_REPLY_ID,
+        CONTENT,
+        CREATE_DATE,
+        1 AS DEPTH,
+        CAST(REPLY_ID AS CHAR(200)) AS PATH
+    FROM t_reply
+    WHERE PARENT_REPLY_ID IS NULL
+      AND BOARD_ID = #{boardId}
+      AND is_usable = true
+
+    UNION ALL
+
+    SELECT
+        R.REPLY_ID,
+        R.BOARD_ID,
+        R.PARENT_REPLY_ID,
+        R.CONTENT,
+        R.CREATE_DATE,
+        RT.DEPTH + 1,
+        CONCAT(RT.PATH, '-', R.REPLY_ID)
+    FROM t_reply R
+    JOIN REPLY_TREE RT
+      ON R.PARENT_REPLY_ID = RT.REPLY_ID
+)
+
         SELECT *
-          FROM t_reply
-         WHERE board_id = #{boardId}
-           AND is_usable = true
-         ORDER BY create_date
+        FROM REPLY_TREE
+        ORDER BY PATH;
+
     </select>
 
     <!-- 게시물 > 첨부파일 리스트 읽기 -->
