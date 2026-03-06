@@ -3,7 +3,7 @@ package com.board.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import static com.board.constants.BoardConstants.PAGE_SIZE;
+
 
 @Data
 public class BoardsRequest {
@@ -17,13 +17,7 @@ public class BoardsRequest {
 	private String keyword;
 	@Schema(description = "페이지 번호", example = "1")
 	private Integer page;
+	@Schema(description = "페이지 단위로 표시할 게시물 수", example = "10")
+	private int pageSize;
 
-	public int getPageSize() {
-		return PAGE_SIZE;
-	}
-
-	public int getOffset() {
-		int p = (page == null || page < 1) ? 1 : page;
-		return (p - 1) * PAGE_SIZE;
-	}
 }

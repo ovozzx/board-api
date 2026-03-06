@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.board.constants.BoardConstants.PAGE_GROUP_SIZE;
-import static com.board.constants.BoardConstants.PAGE_SIZE;
+
 
 @Service
 public class BoardService {
@@ -215,12 +215,12 @@ public class BoardService {
     // 인수 풀어서 써서 넣거나, 추상화 (추상, *인터페이스*)
     // TODO : 화면에서 계산하는 게 맞음 -> 계산 필요한 것만 서버에서 제공 (db)
     public PageInfo createPageInfo(int boardListCount, BoardsRequest boardsRequest){
-        int pageCount = (int) Math.ceil((double) boardListCount / PAGE_SIZE);
+        int pageCount = (int) Math.ceil((double) boardListCount / boardsRequest.getPageSize());
         if (pageCount == 0) pageCount = 1; // TODO : 0일 때는 return
         int currentPage = (boardsRequest.getPage() == null || boardsRequest.getPage() < 1) ? 1 : boardsRequest.getPage();
         int startPage = ((currentPage - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1;
         int endPage = Math.min(startPage + PAGE_GROUP_SIZE - 1, pageCount);
-        PageInfo pageInfo = new PageInfo(currentPage, PAGE_SIZE, pageCount, startPage, endPage, boardListCount);
+        PageInfo pageInfo = new PageInfo(currentPage, boardsRequest.getPageSize(), pageCount, startPage, endPage, boardListCount);
         return pageInfo;
     }
 
