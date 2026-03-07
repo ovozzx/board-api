@@ -80,7 +80,7 @@ public class BoardService {
 
             for (MultipartFile attachment : boardWriteRequest.getAttachmentList() ) { // MultipartFile : wrapper (바이너리 아님)
                 if (attachment == null || attachment.isEmpty()) continue;
-                if (insertAttachmentCnt >= 3) break; // 최대 3개
+                if (insertAttachmentCnt >= 10) break; // 최대 10개
 
                 String originalName = attachment.getOriginalFilename();
                 String saveName = UUID.randomUUID() + "_" + originalName; // 중복 방지
