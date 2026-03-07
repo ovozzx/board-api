@@ -69,7 +69,7 @@ public class BoardService {
 
         // 게시글 insert 실패 == 첨부파일 저장 전 즉시 예외 던지기
         if (insertBoardCnt == 0) {
-            throw new RuntimeException("게시글 등록에 실패했습니다."); // 서버쪽 문제 -> 500
+             new RuntimeException("게시글 등록에 실패했습니다."); // 서버쪽 문제 -> 500
         }
 
         int insertAttachmentCnt = 0;
@@ -108,7 +108,9 @@ public class BoardService {
             throw new RuntimeException("첨부파일 저장에 실패했습니다.");
         }
     }
-
+    // check uncheck
+    // TODO : 500도 따로 빼기. 예외 이름만 봐도 파악 가능하도록 -> 후처리
+    // 게시판은 트랜잭션 필요 없음 --> 목적이 있어야 함 (부하 있음)
     @Transactional
     public void deleteBoard(BoardDeleteRequest requestBoardDelete) {
         String password = boardMapper.selectPasswordById(requestBoardDelete.getBoardId());
@@ -118,7 +120,7 @@ public class BoardService {
         }
 
         if (!password.equals(requestBoardDelete.getPasswordInput())) { // 비밀번호 틀렸을 경우
-            throw new PasswordMismatchException("비밀번호가 틀렸습니다.");
+            throw new PasswordMismatchException("비밀번호가 틀렸습니다."); // TODO : 비밀번호 평문 안됨 (256 key 이상 -> 법)
         }
 
         int successCnt = boardMapper.deleteBoard(requestBoardDelete.getBoardId());

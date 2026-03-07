@@ -126,6 +126,7 @@
     </select>
 
     <!-- 댓글 리스트 읽기 -->
+    <!-- TODO : 처음에 depth 저장해놓는 게 나을듯. 재귀 안해도 됨  -->
     <select id="selectReplyList" parameterType="int" resultType="com.board.vo.ReplyVO">
     WITH RECURSIVE REPLY_TREE AS (
     SELECT
