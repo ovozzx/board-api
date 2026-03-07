@@ -1,6 +1,9 @@
 package com.board.service;
 
 import com.board.dto.*;
+import com.board.exception.BadRequestException;
+import com.board.exception.NotFoundException;
+import com.board.exception.PasswordMismatchException;
 import com.board.mapper.BoardMapper;
 import com.board.vo.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.List;
 import java.util.UUID;
 
@@ -65,7 +69,7 @@ public class BoardService {
 
         // 게시글 insert 실패 == 첨부파일 저장 전 즉시 예외 던지기
         if (insertBoardCnt == 0) {
-            throw new IllegalArgumentException("게시글 등록에 실패했습니다.");
+            throw new RuntimeException("게시글 등록에 실패했습니다."); // 서버쪽 문제 -> 500
         }
 
         int insertAttachmentCnt = 0;
@@ -101,7 +105,7 @@ public class BoardService {
 
         // 첨부파일이 있는데 하나도 저장 못 한 경우
         if (boardWriteRequest.getAttachmentList() != null && insertAttachmentCnt == 0) {
-            throw new IllegalArgumentException("첨부파일 저장에 실패했습니다.");
+            throw new RuntimeException("첨부파일 저장에 실패했습니다.");
         }
     }
 
@@ -110,17 +114,17 @@ public class BoardService {
         String password = boardMapper.selectPasswordById(requestBoardDelete.getBoardId());
 
         if (password == null) { // 존재하지 않는 게시글
-            throw new IllegalArgumentException("존재하지 않는 게시글입니다.");
+            throw new NotFoundException("존재하지 않는 게시글입니다.");
         }
 
         if (!password.equals(requestBoardDelete.getPasswordInput())) { // 비밀번호 틀렸을 경우
-            throw new IllegalArgumentException("비밀번호가 틀렸습니다.");
+            throw new PasswordMismatchException("비밀번호가 틀렸습니다.");
         }
 
         int successCnt = boardMapper.deleteBoard(requestBoardDelete.getBoardId());
 
         if(!(successCnt > 0)){
-            throw new IllegalArgumentException("삭제 중 오류가 발생하였습니다.");
+            throw new RuntimeException("삭제 중 오류가 발생하였습니다.");
         }
 
 
@@ -147,11 +151,11 @@ public class BoardService {
     public void modifyBoard(BoardModifyRequest requestBoardModify) throws IOException {
 
         if (requestBoardModify.getPasswordInput() == null) {
-            throw new IllegalArgumentException("비밀번호를 작성해 주세요.");
+            throw new BadRequestException("비밀번호를 작성해 주세요."); // 필수값 누락 -> 400
         }
 
         if (!requestBoardModify.getPasswordInput().equals(boardMapper.selectPasswordById(requestBoardModify.getBoardId()))) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
         }
 
         // 게시물 수정
@@ -159,7 +163,7 @@ public class BoardService {
 
         // 게시글 수정 실패 == 첨부파일 수정 전 즉시 예외 던지기
         if(updateCnt == 0){
-            throw new IllegalArgumentException("게시물 수정에 실패하였습니다."); // 잘못된 인자가 전달됐을 때 발생하는 예외
+            throw new RuntimeException("게시물 수정에 실패하였습니다."); // 잘못된 인자가 전달됐을 때 발생하는 예외
         }
 
         // 기존 첨부파일 논리 삭제
@@ -197,7 +201,7 @@ public class BoardService {
         }
 
         if(requestBoardModify.getAttachmentList() != null && updateAttachmentCnt == 0){
-            throw new IllegalArgumentException("첨부파일 수정에 실패하였습니다.");
+            throw new RuntimeException("첨부파일 수정에 실패하였습니다.");
         }
     }
 
@@ -205,7 +209,7 @@ public class BoardService {
     public void registerReply(ReplyWriteRequest replyWriteRequest) {
         int insertCnt = boardMapper.insertReply(replyWriteRequest);
         if(insertCnt == 0){
-            throw new IllegalArgumentException("댓글 등록에 실패하였습니다.");
+            throw new RuntimeException("댓글 등록에 실패하였습니다.");
         }
     }
 
