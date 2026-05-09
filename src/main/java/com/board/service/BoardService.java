@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.board.constants.BoardConstants.MAX_ATTACHMENT_COUNT;
-import static com.board.constants.BoardConstants.PAGE_GROUP_SIZE;
+
 
 
 @Service
@@ -41,8 +41,7 @@ public class BoardService {
         List<BoardVO> boardList = boardMapper.selectBoardList(searchVO);
         int boardListCount = boardMapper.selectBoardListCount(searchVO);
 
-        // 페이지네이션 계산 => 생성 함수 만들기
-        BoardsResponse response = new BoardsResponse(categoryList, boardList, boardListCount, null);
+        BoardsResponse response = new BoardsResponse(categoryList, boardList, boardListCount);
 
         return response;
     }
@@ -60,7 +59,7 @@ public class BoardService {
         return response;
     }
 
-    // Docu 제거
+
     @Transactional
     public void registerBoard(BoardWriteRequest boardWriteRequest) throws IOException {
 
@@ -207,7 +206,7 @@ public class BoardService {
         }
     }
 
-    @Transactional
+
     public void registerReply(ReplyWriteRequest replyWriteRequest) {
         int insertCnt = boardMapper.insertReply(replyWriteRequest);
         if(insertCnt == 0){
@@ -215,18 +214,6 @@ public class BoardService {
         }
     }
 
-    // 페이지네이션 함수
-    // TODO : 모두 공통 로직 -> 파라미터 공통적으로 쓸 수 있도록 해야함
-    // 인수 풀어서 써서 넣거나, 추상화 (추상, *인터페이스*)
-    // TODO : 화면에서 계산하는 게 맞음 -> 계산 필요한 것만 서버에서 제공 (db)
-//    public PageInfo createPageInfo(int boardListCount, BoardsRequest boardsRequest){
-//        int pageCount = (int) Math.ceil((double) boardListCount / boardsRequest.getPageSize());
-//        if (pageCount == 0) pageCount = 1; // TODO : 0일 때는 return
-//        int currentPage = (boardsRequest.getPage() == null || boardsRequest.getPage() < 1) ? 1 : boardsRequest.getPage();
-//        int startPage = ((currentPage - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1;
-//        int endPage = Math.min(startPage + PAGE_GROUP_SIZE - 1, pageCount);
-//        PageInfo pageInfo = new PageInfo(currentPage, boardsRequest.getPageSize(), pageCount, startPage, endPage, boardListCount);
-//        return pageInfo;
-//    }
+
 
 }

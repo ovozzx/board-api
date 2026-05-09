@@ -2,6 +2,8 @@ package com.board.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import javax.validation.constraints.NotBlank;
+
 public class ReplyWriteRequest {
 
 	@Schema(hidden = true)
@@ -12,6 +14,7 @@ public class ReplyWriteRequest {
     private Integer parentReplyId;
     @Schema(description = "작성자", example = "홍길동")
     private String createUser;
+	@NotBlank(message = "내용을 입력해 주세요.") // null, "", " " 모두 불가 (String 전용)
     @Schema(description = "댓글 내용", example = "좋은 글이네요!")
     private String content;
     @Schema(hidden = true)

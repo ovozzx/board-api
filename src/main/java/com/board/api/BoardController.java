@@ -26,12 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// TODO :
-//  list : 페이지네이션 : 이전 & 다음
-//  + 피드백
+
 
 // http://localhost:8081/swagger-ui/index.html
-    // 데이터 예시, write
 @Tag(name = "게시판", description = "게시글 CRUD API")
 @RestController
 @RequestMapping("/api/boards")
@@ -41,14 +38,12 @@ public class BoardController {
     @Autowired
     private BoardService service;
 
-    @Operation(summary = "게시글 목록 조회", description = "검색 조건(날짜, 카테고리, 키워드)과 페이지 번호로 게시글 목록을 조회합니다.")
-    @ApiResponses({
+    @Operation(summary = "게시글 목록 조회", description = "검색 조건(날짜, 카테고리, 키워드)과 페이지 번호로 게시글 목록을 조회합니다.") // API 제목과 설명
+    @ApiResponses({ // 응답 코드별 설명 (200, 400, 403 등)
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
     @GetMapping
     public ResponseEntity<BoardsResponse> getBoards(@ModelAttribute BoardsRequest boardsRequest) {
-        // DTO : board list request (도메인단우ㅣ) , 파일명 controller로
-        // ms api 가이드 (자료 첫장)
         // list -> 복수, /id, http method
         LocalDate today = LocalDate.now();
         // dto 한테 맡기기 => validate 기능 사용 (request dto 모두)
@@ -64,7 +59,7 @@ public class BoardController {
         response.setStartDate(boardsRequest.getStartDate());
         response.setEndDate(boardsRequest.getEndDate());
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(response); // 200
     }
 
     @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 게시글 상세 정보, 댓글, 첨부파일을 조회합니다. 조회 시 조회수가 증가합니다.")
@@ -73,7 +68,7 @@ public class BoardController {
     })
     @GetMapping("/{boardId}") // /board/id.. view 수정
     public ResponseEntity<BoardDetailResponse> getBoard(
-            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){
+            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){ // 파라미터 설명
         BoardDetailResponse boardDetailViewVO = service.getDetailBoardById(boardId);
 
         return ResponseEntity.ok(boardDetailViewVO);
@@ -90,20 +85,6 @@ public class BoardController {
         List<CategoryVO> categories = service.getCategories();
         return ResponseEntity.ok(categories);
     }
-
-//    @Operation(summary = "게시글 수정 데이터 조회", description = "게시글 ID로 수정 화면에 필요한 게시글 정보와 첨부파일 목록을 조회합니다. 조회수는 증가하지 않습니다.")
-//    @ApiResponses({
-//            @ApiResponse(responseCode = "200", description = "조회 성공")
-//    })
-//    @GetMapping("/board/{boardId}")
-//    public ResponseEntity<BoardModifyResponse> viewModifyPage(
-//            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){
-//        System.out.println("===" + boardId);
-//        // 수정 시에는 조회수 미증가
-//        BoardModifyResponse boardModifyVO = service.getModifyBoardById(boardId);
-//
-//        return ResponseEntity.ok(boardModifyVO);
-//    }
 
     @Operation(summary = "첨부파일 다운로드", description = "파일 ID로 첨부파일을 다운로드합니다.")
     @ApiResponses({
@@ -193,7 +174,6 @@ public class BoardController {
     })
     @DeleteMapping("/{boardId}")
     public ResponseEntity<?> deleteBoard(@RequestBody BoardDeleteRequest requestBoardDelete) throws IOException {
-        System.out.println("===" + requestBoardDelete.getPasswordInput());
         // 이 흐름이 맞음
         // 컨트롤러 말고 global 핸들러에서 하도록 (한곳에서 처리)
         // 첨부파일, 댓글이 있는 게시물 삭제! => 실제 바이너리 삭제는 어떻게 할지 (정책에 따라)
@@ -206,8 +186,22 @@ public class BoardController {
 
     }
 
+    @Operation(summary = "댓글 등록", description = "게시글에 댓글을 등록합니다. 4 depth 답글 등록이 가능합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "등록 성공"),
+            @ApiResponse(responseCode = "403", description = "필수값 누락"),
+    })
     @PostMapping("/{boardId}/replies")
-    public ResponseEntity<?> registerReply(@RequestBody ReplyWriteRequest replyWriteRequest) { // form 방식일 때만 vo 자동 바인딩, json은 @RequestBody 필요
+    public ResponseEntity<?> registerReply(@Valid @RequestBody ReplyWriteRequest replyWriteRequest, BindingResult bindingResult) { // form 방식일 때만 vo 자동 바인딩, json은 @RequestBody 필요
+
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> // validation에 걸린 필드만 들어있음
+                    errors.put(error.getField(), error.getDefaultMessage())
+            );
+            return ResponseEntity.badRequest().body(errors);
+        }
+
         service.registerReply(replyWriteRequest);
         return ResponseEntity.ok().build(); // build() : body 없음
     }

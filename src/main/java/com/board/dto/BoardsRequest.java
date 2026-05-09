@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 public class BoardsRequest {
-	@Schema(description = "검색 시작일", example = "2025-01-01")
+	@Schema(description = "검색 시작일", example = "2025-01-01") // DTO 필드 설명/예시
 	private String startDate;
 	@Schema(description = "검색 종료일", example = "2025-12-31")
 	private String endDate;

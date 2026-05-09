@@ -13,16 +13,14 @@ public class BoardsResponse {
     private List<CategoryVO> categoryList;
     private List<BoardVO> boardList;
     private int boardListCount;
-    private PageInfo pageInfo;
     private SearchVO searchCondition;
     private String startDate;
     private String endDate;
 
     public BoardsResponse(List<CategoryVO> categoryList, List<BoardVO> boardList,
-                          int boardListCount, PageInfo pageInfo) {
+                          int boardListCount) {
         this.categoryList = categoryList;
         this.boardList = boardList;
         this.boardListCount = boardListCount;
-        this.pageInfo = pageInfo;
     }
 }
