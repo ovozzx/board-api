@@ -1,12 +1,16 @@
 package com.board.service;
 
+import com.board.api.BoardController;
 import com.board.dto.*;
 import com.board.exception.BadRequestException;
 import com.board.exception.NotFoundException;
 import com.board.exception.PasswordMismatchException;
 import com.board.mapper.BoardMapper;
 import com.board.vo.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,18 +28,19 @@ import static com.board.constants.BoardConstants.MAX_ATTACHMENT_COUNT;
 @Service
 public class BoardService {
 
+    private static final Logger log = LoggerFactory.getLogger(BoardService.class);
+    private final PasswordEncoder passwordEncoder;
     @Value("${board.upload-path}") // Spring이 application.properties에 있는 값을 꺼내서 변수에 넣어주는 어노테이션
     private String uploadPath;
 
     private final BoardMapper boardMapper; // mybatis
 
-    public BoardService(BoardMapper boardMapper) {
+    public BoardService(BoardMapper boardMapper, PasswordEncoder passwordEncoder) {
         this.boardMapper = boardMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public BoardsResponse getBoards(BoardsRequest boardsRequest) {
-
-        SearchVO searchVO = SearchVO.from(boardsRequest);
+    public BoardsResponse getBoards(SearchVO searchVO) {
 
         List<CategoryVO> categoryList = boardMapper.selectCategoryList();
         List<BoardVO> boardList = boardMapper.selectBoardList(searchVO);
@@ -47,21 +52,36 @@ public class BoardService {
     }
 
     public BoardDetailResponse getDetailBoardById(int boardId) {
-
+        // 서비스 입장에서는 어떤 화면인지까지 고려하게 됨
         BoardVO boardVO = boardMapper.selectBoard(boardId);
-        List<ReplyVO> replyList = boardMapper.selectReplyList(boardId);
         List<AttachmentVO> fileList = boardMapper.selectFileList(boardId);
 
-        BoardDetailResponse response = new BoardDetailResponse(boardVO, replyList, fileList);
-
-        boardMapper.updateViewCount(boardId);
+        BoardDetailResponse response = new BoardDetailResponse(boardVO, null, fileList);
 
         return response;
     }
 
+    public List<ReplyVO> getReplyList(int boardId){
+        List<ReplyVO> replyList = boardMapper.selectReplyList(boardId);
+        return replyList;
+    }
+
+    public void updateViewCount(int boardId) {
+
+        // TODO : 예외에 대한 처리 어떻게 할지. 안 올라가게 함
+        try{
+            boardMapper.updateViewCount(boardId);
+        } catch(Exception e){
+            log.error("조회 수 증가 실패 boardId = {}", boardId, e);
+        }
+
+    }
 
     @Transactional
     public void registerBoard(BoardWriteRequest boardWriteRequest) throws IOException {
+
+        // 패스워드 해싱 처리
+        boardWriteRequest.setUserPassword(passwordEncoder.encode(boardWriteRequest.getUserPassword()));
 
         // 게시글 insert (useGeneratedKeys로 boardId 자동 세팅)
         int insertBoardCnt = boardMapper.insertBoard(boardWriteRequest);
@@ -118,8 +138,9 @@ public class BoardService {
             throw new NotFoundException("존재하지 않는 게시글입니다.");
         }
 
-        if (!password.equals(requestBoardDelete.getPasswordInput())) { // 비밀번호 틀렸을 경우
-            throw new PasswordMismatchException("비밀번호가 틀렸습니다."); // TODO : 비밀번호 평문 안됨 (256 key 이상 -> 법)
+        if (!passwordEncoder.matches(requestBoardDelete.getPasswordInput(), password)) { // 비밀번호 틀렸을 경우
+            //  matches(평문, 해시) => 해시 안 salt를 꺼내 사용해서 평문을 해싱 후 비교
+            throw new PasswordMismatchException("비밀번호가 틀렸습니다.");
         }
 
         int successCnt = boardMapper.deleteBoard(requestBoardDelete.getBoardId());
@@ -155,7 +176,10 @@ public class BoardService {
             throw new BadRequestException("비밀번호를 작성해 주세요."); // 필수값 누락 -> 400
         }
 
-        if (!requestBoardModify.getPasswordInput().equals(boardMapper.selectPasswordById(requestBoardModify.getBoardId()))) {
+        String password = boardMapper.selectPasswordById(requestBoardModify.getBoardId());
+
+        if (!passwordEncoder.matches(requestBoardModify.getPasswordInput(), password)) {
+            //  matches(평문, 해시) => 해시 안 salt를 꺼내 사용해서 평문을 해싱 후 비교
             throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
         }
 

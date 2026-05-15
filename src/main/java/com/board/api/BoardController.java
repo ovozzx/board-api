@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -35,6 +37,7 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class BoardController {
 
+
     @Autowired
     private BoardService service;
 
@@ -55,9 +58,12 @@ public class BoardController {
             boardsRequest.setEndDate(today.toString());
         }
 
-        BoardsResponse response = service.getBoards(boardsRequest);
+        // 의존성 끊기
+        SearchVO searchVO = SearchVO.from(boardsRequest); // 컨트롤러에서 이루어져야 함. 알고만 있어도 의존성이 생김 끊어야 함
+
+        BoardsResponse response = service.getBoards(searchVO); // TODO: 서비스에서 dto를 알고있음 -> 맵퍼도 컨트롤러에 있는 게 맞음
         response.setStartDate(boardsRequest.getStartDate());
-        response.setEndDate(boardsRequest.getEndDate());
+        response.setEndDate(boardsRequest.getEndDate()); // TODO 매퍼쓰도록 --> 많을 때를 고려해서 수동으로 안하도록 => getBoards 안에서 하는 게 맞을듯 (dto/vo 분리가 안되고 있음)
 
         return ResponseEntity.ok(response); // 200
     }
@@ -70,17 +76,33 @@ public class BoardController {
     public ResponseEntity<BoardDetailResponse> getBoard(
             @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){ // 파라미터 설명
         BoardDetailResponse boardDetailViewVO = service.getDetailBoardById(boardId);
+        List<ReplyVO> replyList = service.getReplyList(boardId);
+        boardDetailViewVO.setReplyList(replyList);
+        service.updateViewCount(boardId);
 
         return ResponseEntity.ok(boardDetailViewVO);
         //  null => 서비스에서 예외 던지기 => 컨트롤러 던지기 => 공통 예외처리
-        // TODO : 수정화면
+
+    }
+
+    @Operation(summary = "게시글 수정을 위한 조회", description = "게시글 ID로 게시글 상세 정보, 댓글, 첨부파일을 조회합니다. 조회 시 조회수가 증가하지 않습니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공")
+    })
+    @GetMapping("/{boardId}/modify") //
+    public ResponseEntity<BoardDetailResponse> getBoardForModify(
+            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){ // 파라미터 설명
+        BoardDetailResponse boardDetailViewVO = service.getDetailBoardById(boardId);
+
+        return ResponseEntity.ok(boardDetailViewVO);
+
     }
 
     @Operation(summary = "게시글 작성을 위한 카테고리 목록 조회", description = "게시글 작성 시 사용할 카테고리 목록을 조회합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    @GetMapping("/cateogories") // TODO : 카테고리를 공통으로 쓰도록
+    @GetMapping("/cateogories")
     public ResponseEntity<List<CategoryVO>> getCategories(){
         List<CategoryVO> categories = service.getCategories();
         return ResponseEntity.ok(categories);
@@ -123,18 +145,20 @@ public class BoardController {
             @ApiResponse(responseCode = "403", description = "필수값 누락 또는 등록 실패")
     })
     @PostMapping
-    public ResponseEntity<?> writeBoard(@Valid @ModelAttribute BoardWriteRequest requestBoardWrite, BindingResult bindingResult) throws IOException {
+    public ResponseEntity<?> writeBoard(@Valid @ModelAttribute BoardWriteRequest requestBoardWrite) throws IOException {
 
         // valid dto에 넣기
         // @Valid만 붙이면 DTO의 @NotBlank 등이 자동 실행되고, 결과가 BindingResult에 담김
         // bindingResult.getAllErrors() -> 에러 객체 안에 그 message 값이 담김
-        if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult.getFieldErrors().forEach(error -> // validation에 걸린 필드만 들어있음
-                    errors.put(error.getField(), error.getDefaultMessage())
-            );
-            return ResponseEntity.badRequest().body(errors);
-        }
+        // 아래 유효성 검사 유틸화
+        // DTO 어노테이션 & 파라미터 @Valid --> BindingResult가 없으면, validation 실패 시 Spring이 자동으로 MethodArgumentNotValidException 던짐!
+//        if (bindingResult.hasErrors()) {
+//            Map<String, String> errors = new HashMap<>();
+//            bindingResult.getFieldErrors().forEach(error -> // validation에 걸린 필드만 들어있음
+//                    errors.put(error.getField(), error.getDefaultMessage())
+//            );
+//            return ResponseEntity.badRequest().body(errors);
+//        }
 
         service.registerBoard(requestBoardWrite); // void, 성공시 등록 결과 return / 실패면 예외 던지기 ===> 프론트 : 받은 데이터를 활용 (등록 패턴 통일) CRD
         return ResponseEntity.ok().build();
@@ -149,17 +173,9 @@ public class BoardController {
             @ApiResponse(responseCode = "403", description = "비밀번호 불일치")
     })
     @PutMapping("/{boardId}")
-    public ResponseEntity<?> modifyBoard(@Valid @ModelAttribute BoardModifyRequest requestBoardModify, BindingResult bindingResult) throws IOException {
+    public ResponseEntity<?> modifyBoard(@Valid @ModelAttribute BoardModifyRequest requestBoardModify) throws IOException {
         // board, 첨부파일, 삭제
         System.out.println("삭제 id : " + requestBoardModify.getDeleteIds());
-
-        if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult.getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-            );
-            return ResponseEntity.badRequest().body(errors);
-        }
 
         service.modifyBoard(requestBoardModify);
         return ResponseEntity.ok().build();
@@ -192,19 +208,12 @@ public class BoardController {
             @ApiResponse(responseCode = "403", description = "필수값 누락"),
     })
     @PostMapping("/{boardId}/replies")
-    public ResponseEntity<?> registerReply(@Valid @RequestBody ReplyWriteRequest replyWriteRequest, BindingResult bindingResult) { // form 방식일 때만 vo 자동 바인딩, json은 @RequestBody 필요
-
-        if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult.getFieldErrors().forEach(error -> // validation에 걸린 필드만 들어있음
-                    errors.put(error.getField(), error.getDefaultMessage())
-            );
-            return ResponseEntity.badRequest().body(errors);
-        }
+    public ResponseEntity<?> registerReply(@Valid @RequestBody ReplyWriteRequest replyWriteRequest) { // form 방식일 때만 vo 자동 바인딩, json은 @RequestBody 필요
 
         service.registerReply(replyWriteRequest);
         return ResponseEntity.ok().build(); // build() : body 없음
     }
+
 
 
 }

@@ -1,5 +1,7 @@
 package com.board.vo;
 
+import com.board.dto.BoardsRequest;
+
 import java.util.List;
 
 public class BoardVO {
