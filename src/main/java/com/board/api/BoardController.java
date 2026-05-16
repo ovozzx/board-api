@@ -1,5 +1,6 @@
 package com.board.api;
 
+import com.board.converter.BoardConverter;
 import com.board.dto.*;
 import com.board.service.BoardService;
 import com.board.vo.*;
@@ -8,26 +9,19 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 
 
 // http://localhost:8081/swagger-ui/index.html
@@ -37,6 +31,8 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class BoardController {
 
+    @Autowired
+    private BoardConverter boardConverter;
 
     @Autowired
     private BoardService service;
@@ -48,22 +44,12 @@ public class BoardController {
     @GetMapping
     public ResponseEntity<BoardsResponse> getBoards(@ModelAttribute BoardsRequest boardsRequest) {
         // list -> 복수, /id, http method
-        LocalDate today = LocalDate.now();
-        // dto 한테 맡기기 => validate 기능 사용 (request dto 모두)
-        if (boardsRequest.getStartDate() == null || boardsRequest.getStartDate().isEmpty()) {
-            boardsRequest.setStartDate(today.minusYears(1).toString());
-        }
-
-        if (boardsRequest.getEndDate() == null || boardsRequest.getEndDate().isEmpty()) {
-            boardsRequest.setEndDate(today.toString());
-        }
 
         // 의존성 끊기
         SearchVO searchVO = SearchVO.from(boardsRequest); // 컨트롤러에서 이루어져야 함. 알고만 있어도 의존성이 생김 끊어야 함
-
-        BoardsResponse response = service.getBoards(searchVO); // TODO: 서비스에서 dto를 알고있음 -> 맵퍼도 컨트롤러에 있는 게 맞음
-        response.setStartDate(boardsRequest.getStartDate());
-        response.setEndDate(boardsRequest.getEndDate()); // TODO 매퍼쓰도록 --> 많을 때를 고려해서 수동으로 안하도록 => getBoards 안에서 하는 게 맞을듯 (dto/vo 분리가 안되고 있음)
+        // TODO 응답 entity -> dto <=>  서비스 3번 호출
+        // new BoardsResponse(categoryList, boardList, boardListCount)
+        BoardsResponse response = service.getBoards(searchVO);
 
         return ResponseEntity.ok(response); // 200
     }
@@ -75,7 +61,8 @@ public class BoardController {
     @GetMapping("/{boardId}") // /board/id.. view 수정
     public ResponseEntity<BoardDetailResponse> getBoard(
             @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){ // 파라미터 설명
-        BoardDetailResponse boardDetailViewVO = service.getDetailBoardById(boardId);
+
+        BoardDetailResponse boardDetailViewVO = service.getBoard(boardId);
         List<ReplyVO> replyList = service.getReplyList(boardId);
         boardDetailViewVO.setReplyList(replyList);
         service.updateViewCount(boardId);
@@ -92,7 +79,7 @@ public class BoardController {
     @GetMapping("/{boardId}/modify") //
     public ResponseEntity<BoardDetailResponse> getBoardForModify(
             @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){ // 파라미터 설명
-        BoardDetailResponse boardDetailViewVO = service.getDetailBoardById(boardId);
+        BoardDetailResponse boardDetailViewVO = service.getBoard(boardId);
 
         return ResponseEntity.ok(boardDetailViewVO);
 
@@ -159,8 +146,8 @@ public class BoardController {
 //            );
 //            return ResponseEntity.badRequest().body(errors);
 //        }
-
-        service.registerBoard(requestBoardWrite); // void, 성공시 등록 결과 return / 실패면 예외 던지기 ===> 프론트 : 받은 데이터를 활용 (등록 패턴 통일) CRD
+        BoardVO boardVO = boardConverter.from(requestBoardWrite);
+        service.registerBoard(boardVO); // void, 성공시 등록 결과 return / 실패면 예외 던지기 ===> 프론트 : 받은 데이터를 활용 (등록 패턴 통일) CRD
         return ResponseEntity.ok().build();
 
 
@@ -174,10 +161,8 @@ public class BoardController {
     })
     @PutMapping("/{boardId}")
     public ResponseEntity<?> modifyBoard(@Valid @ModelAttribute BoardModifyRequest requestBoardModify) throws IOException {
-        // board, 첨부파일, 삭제
-        System.out.println("삭제 id : " + requestBoardModify.getDeleteIds());
-
-        service.modifyBoard(requestBoardModify);
+        BoardVO boardVO = boardConverter.from(requestBoardModify);
+        service.modifyBoard(boardVO);
         return ResponseEntity.ok().build();
 
     }
@@ -189,7 +174,7 @@ public class BoardController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @DeleteMapping("/{boardId}")
-    public ResponseEntity<?> deleteBoard(@RequestBody BoardDeleteRequest requestBoardDelete) throws IOException {
+    public ResponseEntity<?> deleteBoard(@PathVariable int boardId, @RequestBody BoardDeleteRequest requestBoardDelete) throws IOException {
         // 이 흐름이 맞음
         // 컨트롤러 말고 global 핸들러에서 하도록 (한곳에서 처리)
         // 첨부파일, 댓글이 있는 게시물 삭제! => 실제 바이너리 삭제는 어떻게 할지 (정책에 따라)
@@ -197,7 +182,7 @@ public class BoardController {
         // TODO : 조건 분기
         // 게시물 없음 (400), 비밀번호 불일치 (403), 삭제 성공 (200), 삭제 실패 (400)
 
-        service.deleteBoard(requestBoardDelete); // 결과 cnt 피하기
+        service.deleteBoard(boardId, requestBoardDelete.getPasswordInput()); // 결과 cnt 피하기
         return ResponseEntity.ok().build();
 
     }
@@ -209,8 +194,8 @@ public class BoardController {
     })
     @PostMapping("/{boardId}/replies")
     public ResponseEntity<?> registerReply(@Valid @RequestBody ReplyWriteRequest replyWriteRequest) { // form 방식일 때만 vo 자동 바인딩, json은 @RequestBody 필요
-
-        service.registerReply(replyWriteRequest);
+        ReplyVO replyVO = boardConverter.from(replyWriteRequest);
+        service.registerReply(replyVO);
         return ResponseEntity.ok().build(); // build() : body 없음
     }
 

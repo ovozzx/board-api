@@ -13,8 +13,8 @@ public interface BoardMapper {
     List<BoardVO> selectBoardList(SearchVO searchVO);
     List<CategoryVO> selectCategoryList();
     BoardVO selectBoard(int boardId);
-    int insertBoard(BoardWriteRequest requestBoardWrite);
-    int updateBoard(BoardModifyRequest requestBoardModify);
+    int insertBoard(BoardVO boardVO);
+    int updateBoard(BoardVO boardVO);
     int deleteBoard(int boardId);
     int updateViewCount(int boardId);
     String selectPasswordById(int boardId);
@@ -32,5 +32,5 @@ public interface BoardMapper {
 
     int deleteAttachment(int attachmentId);
 
-    int insertReply(ReplyWriteRequest replyWriteRequest);
+    int insertReply(ReplyVO replyVO);
 }

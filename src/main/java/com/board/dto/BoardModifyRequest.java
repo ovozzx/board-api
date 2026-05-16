@@ -34,7 +34,7 @@ public class BoardModifyRequest {
     private String useYn;
     @NotBlank(message = "비밀번호를 입력해 주세요.")
     @Schema(description = "비밀번호", example = "aa1234*")
-    private String passwordInput;
+    private String userPassword;
     @Schema(description = "삭제할 첨부파일 ID 목록", example = "[1, 2]")
     private List<Integer> deleteIds;
     @Schema(description = "첨부파일 목록")

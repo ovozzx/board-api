@@ -38,7 +38,7 @@
         INNER JOIN t_category c ON b.category_id = c.category_id
         <include refid="boardSearchCondition" />
         ORDER BY b.board_id DESC
-        LIMIT #{pageSize} OFFSET #{offset}
+            LIMIT #{pageSize} OFFSET #{offset}
         <!-- LIMIT 10 OFFSET 0 : 0번째부터 10개  → 1~10번째 -->
     </select>
 
@@ -57,9 +57,16 @@
           FROM t_category
     </select>
 
-    <!-- 단건 조회 -->
+    <!-- 단건 조회, 민감 정보 제외하고 조회 -->
     <select id="selectBoard" parameterType="int" resultType="com.board.vo.BoardVO">
-        SELECT b.*
+        SELECT b.board_id
+             , b.category_id
+             , b.title
+             , b.content
+             , b.create_user
+             , b.view_count
+             , b.create_date
+             , b.modify_date
              , c.category_name
           FROM t_board b
          INNER JOIN t_category c ON b.category_id = c.category_id
@@ -68,13 +75,13 @@
     </select>
 
     <!-- 등록 -->
-    <insert id="insertBoard" parameterType="com.board.dto.BoardWriteRequest" useGeneratedKeys="true" keyProperty="boardId">
+    <insert id="insertBoard" parameterType="com.board.vo.BoardVO" useGeneratedKeys="true" keyProperty="boardId">
         INSERT INTO t_board (category_id, title, content, create_user, user_password, is_usable)
         VALUES (#{categoryId}, #{title}, #{content}, #{createUser}, #{userPassword}, true)
     </insert>
 
     <!-- 수정 -->
-    <update id="updateBoard" parameterType="com.board.dto.BoardModifyRequest">
+    <update id="updateBoard" parameterType="com.board.vo.BoardVO">
         UPDATE t_board
         SET create_user = #{createUser}
           , title = #{title}
@@ -203,7 +210,7 @@
     </insert>
 
     <!-- 댓글 등록 -->
-    <insert id="insertReply" parameterType="com.board.dto.ReplyWriteRequest">
+    <insert id="insertReply" parameterType="com.board.vo.ReplyVO">
         INSERT INTO t_reply
         (board_id
         , parent_reply_id
