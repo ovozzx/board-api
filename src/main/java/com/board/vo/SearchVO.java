@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Data
 public class SearchVO {
-
+	// TODO 매퍼에서 아래 작업하는 게 맞을듯 (**일관성**) -> 클로드 쓸 때도 md로
 	public static SearchVO from(BoardsRequest request) { //  BoardsRequest → SearchVO로 타입 변환 + null 처리 로직
 		SearchVO vo = new SearchVO();
 		LocalDate today = LocalDate.now();

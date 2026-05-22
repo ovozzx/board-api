@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
 
-
+// TODO 암호 key 512 권장
+// TODO 스웨거 성공/**실패** 응답 표준화 필요 (프론트 입장 고려), 먼저 정하고 시작
+// 200으로 받고, 바디에 에러 코드 넣어서 에러 핸들링하는 경우 존재 -> 맞지 않음 (응답 바디에 상태 코드 있으면 안됨)
 // http://localhost:8081/swagger-ui/index.html
 @Tag(name = "게시판", description = "게시글 CRUD API")
 @RestController
@@ -48,6 +50,7 @@ public class BoardController {
         // 의존성 끊기
         SearchVO searchVO = SearchVO.from(boardsRequest); // 컨트롤러에서 이루어져야 함. 알고만 있어도 의존성이 생김 끊어야 함
         // TODO 응답 entity -> dto <=>  서비스 3번 호출
+        // TODO 화면 개발 입장에서는 어디가 안 쓰이는지 모름, 차라리 서비스 시나리오 흐름이 노출되는 게 나음
         // new BoardsResponse(categoryList, boardList, boardListCount)
         BoardsResponse response = service.getBoards(searchVO);
 
@@ -118,7 +121,6 @@ public class BoardController {
         Resource resource = new FileSystemResource(file); // 디스크의 파일을 HTTP 응답 바디로 스트리밍할 수 있게 래핑
         String encodedName = URLEncoder.encode(attachment.getOriginalName(), "UTF-8")
                                        .replaceAll("\\+", "%20");
-        // TODO : 통으로 읽어서 내려받기 or 부분 부분만 내려받기
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedName)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -146,7 +148,7 @@ public class BoardController {
 //            );
 //            return ResponseEntity.badRequest().body(errors);
 //        }
-        BoardVO boardVO = boardConverter.from(requestBoardWrite);
+        BoardVO boardVO = boardConverter.from(requestBoardWrite); // TODO service.registerBoard(boardConverter.from(requestBoardWrite));, 정적 소스 보안 툴에 걸림
         service.registerBoard(boardVO); // void, 성공시 등록 결과 return / 실패면 예외 던지기 ===> 프론트 : 받은 데이터를 활용 (등록 패턴 통일) CRD
         return ResponseEntity.ok().build();
 

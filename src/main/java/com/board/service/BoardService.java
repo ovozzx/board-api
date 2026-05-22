@@ -68,7 +68,7 @@ public class BoardService {
 
     public void updateViewCount(int boardId) {
 
-        // TODO : 예외에 대한 처리 어떻게 할지. 안 올라가게 함
+        // TODO : 예외에 대한 처리 어떻게 할지. 안 올라가게 함. 목적에 따라 다를 수 있음 ex. 광고 (비즈니스 관점)
         try{
             boardMapper.updateViewCount(boardId);
         } catch(Exception e){
