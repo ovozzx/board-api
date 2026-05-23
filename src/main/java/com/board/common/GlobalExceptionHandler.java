@@ -7,6 +7,7 @@ import com.board.exception.PasswordMismatchException;
 import com.board.service.BoardService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,40 +26,51 @@ public class GlobalExceptionHandler { // Service에서 던진 예외는 GlobalEx
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     // TODO : 맵퍼 쿼리 오류, db 연결, IO 등 그래도 던져지는 게 맞는지 (서비스 랩퍼)
+
+    // 500
     @ExceptionHandler(Exception.class) // 모든 예외의 최상위 부모 -> 구체적인 핸들러에 안 걸리는 예외는 전부 handleException에서 잡힘!
     public ResponseEntity<ErrorResponse> handleException(Exception e){ // 쿼리 오류 화면에 보이면 안됨
         log.error("서버 오류", e);
-        return ResponseEntity.status(500).body(new ErrorResponse(500, e.getMessage())); // 에러 메세지 문자열로 하고 실제 내용은 log.error(e)에 기록 (보안)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("INTERNAL_ERROR", "서버 오류가 발생했습니다.")); // 에러 메세지 문자열로 하고 실제 내용은 log.error(e)에 기록 (보안)
     }
 
+    // 400 :  @Valid 실패 잡힘
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleCheckValidation(MethodArgumentNotValidException e){
+        String firstError = e.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .orElse("입력값이 올바르지 않습니다.");
         log.warn("MethodArgumentNotValidException {}", e.getMessage());
-        return ResponseEntity.status(400).body(new ErrorResponse(400, e.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("INVALID_INPUT", firstError));
     }
 
+    // 400
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException e){
         log.warn("BadRequestException {}", e.getMessage());
-        return ResponseEntity.status(400).body(new ErrorResponse(400, e.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("BAD_REQUEST", e.getMessage()));
     }
 
+    // 404
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException e) {
         log.warn("NotFoundException {}", e.getMessage());
-        return ResponseEntity.status(404).body(new ErrorResponse(404, e.getMessage()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("NOT_FOUND", e.getMessage()));
     }
 
+    // 403
     @ExceptionHandler(PasswordMismatchException.class)
     public ResponseEntity<ErrorResponse> handlePasswordMismatch(PasswordMismatchException e){
         log.warn("PasswordMismatchException {}", e.getMessage());
-        return ResponseEntity.status(403).body(new ErrorResponse(403, e.getMessage())); //  401/403 (인증/권한)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("PASSWORD_MISMATCH", e.getMessage())); //  401/403 (인증/권한)
     }
 
+    // 400
     @ExceptionHandler(MaxUploadSizeExceededException.class) // 이 예외가 발생하면, 아래 메서드를 실행!
     public ResponseEntity<ErrorResponse> handleMaxSizeException(MaxUploadSizeExceededException e) {
         log.warn("MaxUploadSizeExceededException {}", e.getMessage());
-        return ResponseEntity.status(400).body(new ErrorResponse(400, "파일 용량이 초과되었습니다. (최대 10MB)")); // 잘못된 요청임
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("FILE_SIZE_EXCEEDED", "파일 용량이 초과되었습니다. (최대 10MB)")); // 잘못된 요청임
     }
 
     // 구체적인 핸들러를 우선 매칭

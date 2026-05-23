@@ -12,6 +12,7 @@ public class ReplyWriteRequest {
     private int boardId;
     @Schema(description = "부모 댓글 ID (대댓글인 경우)", example = "0")
     private Integer parentReplyId;
+    @NotBlank(message = "작성자를 입력해 주세요.")
     @Schema(description = "작성자", example = "홍길동")
     private String createUser;
 	@NotBlank(message = "내용을 입력해 주세요.") // null, "", " " 모두 불가 (String 전용)

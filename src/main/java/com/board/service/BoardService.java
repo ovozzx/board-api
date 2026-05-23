@@ -2,7 +2,6 @@ package com.board.service;
 
 import com.board.api.BoardController;
 import com.board.dto.*;
-import com.board.exception.BadRequestException;
 import com.board.exception.NotFoundException;
 import com.board.exception.PasswordMismatchException;
 import com.board.mapper.BoardMapper;
@@ -40,25 +39,25 @@ public class BoardService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public BoardsResponse getBoards(SearchVO searchVO) {
-
-        List<CategoryVO> categoryList = boardMapper.selectCategoryList();
-        List<BoardVO> boardList = boardMapper.selectBoardList(searchVO);
-        int boardListCount = boardMapper.selectBoardListCount(searchVO);
-
-        BoardsResponse response = new BoardsResponse(categoryList, boardList, boardListCount, searchVO);
-
-        return response;
+    // 응답 DTO 조립은 컨트롤러가 담당, 서비스는 단일 책임 메서드만 노출
+    public List<BoardVO> getBoardList(SearchVO searchVO) {
+        return boardMapper.selectBoardList(searchVO);
     }
 
-    public BoardDetailResponse getBoard(int boardId) {
-        // 서비스 입장에서는 어떤 화면인지까지 고려하지 않도록
+    public int getBoardListCount(SearchVO searchVO) {
+        return boardMapper.selectBoardListCount(searchVO);
+    }
+
+    public BoardVO getBoardById(int boardId) {
         BoardVO boardVO = boardMapper.selectBoard(boardId);
-        List<AttachmentVO> fileList = boardMapper.selectFileList(boardId);
+        if (boardVO == null) {
+            throw new NotFoundException("존재하지 않는 게시글입니다.");
+        }
+        return boardVO;
+    }
 
-        BoardDetailResponse response = new BoardDetailResponse(boardVO, null, fileList);
-
-        return response;
+    public List<AttachmentVO> getAttachments(int boardId) {
+        return boardMapper.selectFileList(boardId);
     }
 
     public List<ReplyVO> getReplyList(int boardId){
@@ -162,11 +161,7 @@ public class BoardService {
 
     @Transactional
     public void modifyBoard(BoardVO boardVO) throws IOException {
-
-        if (boardVO.getUserPassword() == null) {
-            throw new BadRequestException("비밀번호를 작성해 주세요."); // 필수값 누락 -> 400
-        }
-
+        // 비밀번호 필수값 체크는 BoardModifyRequest의 @NotBlank + 컨트롤러의 @Valid에서 처리됨
         String password = boardMapper.selectPasswordById(boardVO.getBoardId());
 
         if (!passwordEncoder.matches(boardVO.getUserPassword(), password)) {

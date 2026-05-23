@@ -6,6 +6,8 @@ import com.board.service.BoardService;
 import com.board.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,56 +43,63 @@ public class BoardController {
 
     @Operation(summary = "게시글 목록 조회", description = "검색 조건(날짜, 카테고리, 키워드)과 페이지 번호로 게시글 목록을 조회합니다.") // API 제목과 설명
     @ApiResponses({ // 응답 코드별 설명 (200, 400, 403 등)
-            @ApiResponse(responseCode = "200", description = "조회 성공")
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "게시글 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @GetMapping
     public ResponseEntity<BoardsResponse> getBoards(@ModelAttribute BoardsRequest boardsRequest) {
-        // list -> 복수, /id, http method
+        // DTO → VO 변환은 컨트롤러가 담당 (서비스가 BoardsRequest를 모르게)
+        SearchVO searchVO = boardConverter.from(boardsRequest);
 
-        // 의존성 끊기
-        SearchVO searchVO = SearchVO.from(boardsRequest); // 컨트롤러에서 이루어져야 함. 알고만 있어도 의존성이 생김 끊어야 함
-        // TODO 응답 entity -> dto <=>  서비스 3번 호출
-        // TODO 화면 개발 입장에서는 어디가 안 쓰이는지 모름, 차라리 서비스 시나리오 흐름이 노출되는 게 나음
-        // new BoardsResponse(categoryList, boardList, boardListCount)
-        BoardsResponse response = service.getBoards(searchVO);
+        // 시나리오를 컨트롤러에 노출 — 화면 개발자가 어떤 데이터들이 모이는지 한눈에 보임
+        List<CategoryVO> categoryList = service.getCategories();
+        List<BoardVO> boardList = service.getBoardList(searchVO);
+        int totalCount = service.getBoardListCount(searchVO);
+
+        // 응답 DTO 조립도 컨트롤러가 담당 (서비스가 응답 형태를 모르게)
+        BoardsResponse response = new BoardsResponse(categoryList, boardList, totalCount, searchVO);
 
         return ResponseEntity.ok(response); // 200
     }
 
     @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 게시글 상세 정보, 댓글, 첨부파일을 조회합니다. 조회 시 조회수가 증가합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회 성공")
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "게시글 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @GetMapping("/{boardId}") // /board/id.. view 수정
+    @GetMapping("/{boardId}")
     public ResponseEntity<BoardDetailResponse> getBoard(
-            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){ // 파라미터 설명
+            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){
 
-        BoardDetailResponse boardDetailViewVO = service.getBoard(boardId);
+        BoardVO board = service.getBoardById(boardId);
+        List<AttachmentVO> fileList = service.getAttachments(boardId);
         List<ReplyVO> replyList = service.getReplyList(boardId);
-        boardDetailViewVO.setReplyList(replyList);
         service.updateViewCount(boardId);
 
-        return ResponseEntity.ok(boardDetailViewVO);
-        //  null => 서비스에서 예외 던지기 => 컨트롤러 던지기 => 공통 예외처리
-
+        return ResponseEntity.ok(new BoardDetailResponse(board, replyList, fileList));
     }
 
     @Operation(summary = "게시글 수정을 위한 조회", description = "게시글 ID로 게시글 상세 정보, 댓글, 첨부파일을 조회합니다. 조회 시 조회수가 증가하지 않습니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회 성공")
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "게시글 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @GetMapping("/{boardId}/modify") //
+    @GetMapping("/{boardId}/modify")
     public ResponseEntity<BoardDetailResponse> getBoardForModify(
-            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){ // 파라미터 설명
-        BoardDetailResponse boardDetailViewVO = service.getBoard(boardId);
+            @Parameter(description = "게시글 ID", required = true) @PathVariable int boardId){
+        BoardVO board = service.getBoardById(boardId);
+        List<AttachmentVO> fileList = service.getAttachments(boardId);
 
-        return ResponseEntity.ok(boardDetailViewVO);
-
+        return ResponseEntity.ok(new BoardDetailResponse(board, null, fileList));
     }
 
     @Operation(summary = "게시글 작성을 위한 카테고리 목록 조회", description = "게시글 작성 시 사용할 카테고리 목록을 조회합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회 성공")
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @GetMapping("/cateogories")
     public ResponseEntity<List<CategoryVO>> getCategories(){
@@ -101,7 +110,8 @@ public class BoardController {
     @Operation(summary = "첨부파일 다운로드", description = "파일 ID로 첨부파일을 다운로드합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "다운로드 성공"),
-            @ApiResponse(responseCode = "404", description = "파일 없음")
+            @ApiResponse(responseCode = "404", description = "파일 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @GetMapping("/{boardId}/attachments/{attachmentId}")
     public ResponseEntity<Resource> getAttachment(
@@ -131,7 +141,8 @@ public class BoardController {
     @Operation(summary = "게시글 등록", description = "게시글을 등록합니다. 첨부파일은 최대 3개까지 업로드 가능합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "등록 성공"),
-            @ApiResponse(responseCode = "403", description = "필수값 누락 또는 등록 실패")
+            @ApiResponse(responseCode = "400", description = "필수값 누락"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PostMapping
     public ResponseEntity<?> writeBoard(@Valid @ModelAttribute BoardWriteRequest requestBoardWrite) throws IOException {
@@ -148,8 +159,7 @@ public class BoardController {
 //            );
 //            return ResponseEntity.badRequest().body(errors);
 //        }
-        BoardVO boardVO = boardConverter.from(requestBoardWrite); // TODO service.registerBoard(boardConverter.from(requestBoardWrite));, 정적 소스 보안 툴에 걸림
-        service.registerBoard(boardVO); // void, 성공시 등록 결과 return / 실패면 예외 던지기 ===> 프론트 : 받은 데이터를 활용 (등록 패턴 통일) CRD
+        service.registerBoard(boardConverter.from(requestBoardWrite)); // 나누지 말기 (정적 보안 소스 툴에 걸림)
         return ResponseEntity.ok().build();
 
 
@@ -159,7 +169,8 @@ public class BoardController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "400", description = "필수값 누락"),
-            @ApiResponse(responseCode = "403", description = "비밀번호 불일치")
+            @ApiResponse(responseCode = "403", description = "비밀번호 불일치"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PutMapping("/{boardId}")
     public ResponseEntity<?> modifyBoard(@Valid @ModelAttribute BoardModifyRequest requestBoardModify) throws IOException {
@@ -172,11 +183,12 @@ public class BoardController {
     @Operation(summary = "게시글 삭제", description = "비밀번호 검증 후 게시글을 삭제합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "400", description = "필수값 누락"),
             @ApiResponse(responseCode = "403", description = "비밀번호 불일치"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @DeleteMapping("/{boardId}")
-    public ResponseEntity<?> deleteBoard(@PathVariable int boardId, @RequestBody BoardDeleteRequest requestBoardDelete) throws IOException {
+    public ResponseEntity<?> deleteBoard(@PathVariable int boardId, @Valid @RequestBody BoardDeleteRequest requestBoardDelete) throws IOException {
         // 이 흐름이 맞음
         // 컨트롤러 말고 global 핸들러에서 하도록 (한곳에서 처리)
         // 첨부파일, 댓글이 있는 게시물 삭제! => 실제 바이너리 삭제는 어떻게 할지 (정책에 따라)
@@ -192,7 +204,8 @@ public class BoardController {
     @Operation(summary = "댓글 등록", description = "게시글에 댓글을 등록합니다. 4 depth 답글 등록이 가능합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "등록 성공"),
-            @ApiResponse(responseCode = "403", description = "필수값 누락"),
+            @ApiResponse(responseCode = "400", description = "필수값 누락"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PostMapping("/{boardId}/replies")
     public ResponseEntity<?> registerReply(@Valid @RequestBody ReplyWriteRequest replyWriteRequest) { // form 방식일 때만 vo 자동 바인딩, json은 @RequestBody 필요
